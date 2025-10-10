@@ -49,11 +49,11 @@ class _DashboardState extends State<Dashboard> {
                         count: state.subscriptionCount,
                         title: "Subscriptions",
                         subtitle: "Active"),
-                    CounterWidget(
-                        count: state.projectedRevenue?.toInt(),
-                        prefix: "\$",
-                        title: "Projected",
-                        subtitle: "Monthly Revenue"),
+                    // CounterWidget(
+                    //     count: state.projectedRevenue?.toInt(),
+                    //     prefix: "\$",
+                    //     title: "Projected",
+                    //     subtitle: "Monthly Revenue"),
                   ],
                 );
               },

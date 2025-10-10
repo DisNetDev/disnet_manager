@@ -23,7 +23,7 @@ class DashboardCubit extends Cubit<DashboardState> {
     if (app == App.placeholder || app == null) {
       try {
         final placeholderUsers =
-            await placeholderAdmin.from('users').select('*').count();
+            await placeholderAdmin.from('profiles').select('*').count();
         totalCount += placeholderUsers.count;
       } catch (e) {
         log(e.toString());
@@ -50,9 +50,9 @@ class DashboardCubit extends Cubit<DashboardState> {
     if (app == App.placeholder || app == null) {
       try {
         final placeholderSubscriptions = await placeholderAdmin
-            .from('users')
+            .from('profiles')
             .select('*')
-            .eq('premium', true)
+            .eq('is_pro', true)
             .count();
         totalCount += placeholderSubscriptions.count;
       } catch (e) {

@@ -1,3 +1,4 @@
+import 'package:disnet_manager/features/fishroom/widgets/bug_reports_list.dart';
 import 'package:flutter/material.dart';
 
 class FishroomOverview extends StatelessWidget {
@@ -5,8 +6,14 @@ class FishroomOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Text("Fishroom Overview"),
+    return SizedBox(
+      height: MediaQuery.of(context).size.height,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          children: [BugReportsList()],
+        ),
+      ),
     );
   }
 }

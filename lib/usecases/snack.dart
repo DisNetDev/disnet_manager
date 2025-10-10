@@ -4,7 +4,7 @@ import 'package:disnet_manager/usecases/is_dark_mode.dart';
 import 'package:toastification/toastification.dart';
 import 'dart:async';
 
-void showToast(
+void snack(
   BuildContext context, {
   required String title,
   String? description,
