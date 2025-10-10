@@ -1,11 +1,15 @@
+import 'package:disnet_manager/enums/app.dart';
 import 'package:disnet_manager/features/app/widgets/logo.dart';
 import 'package:disnet_manager/features/debug/debug_screen.dart';
 import 'package:disnet_manager/features/fishroom/views/fishroom_overview.dart';
+import 'package:disnet_manager/features/fishroom/widgets/bug_reports_list.dart';
+import 'package:disnet_manager/features/fishroom/widgets/fish_suggestions.dart';
 import 'package:disnet_manager/features/homescreen/views/dashboard.dart';
 import 'package:disnet_manager/features/placeholder/views/placeholder_overview.dart';
 import 'package:disnet_manager/models/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 
 class Sidebar extends StatefulWidget {
   const Sidebar({super.key, required this.onTileTap, required this.overview});
@@ -18,6 +22,9 @@ class Sidebar extends StatefulWidget {
 }
 
 class _SidebarState extends State<Sidebar> {
+  bool showFishroomSubTiles = false;
+  bool showPlaceholderSubTiles = false;
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -44,10 +51,28 @@ class _SidebarState extends State<Sidebar> {
             title: "Fishroom",
             subtitle: "Home",
             onTap: () {
+              setState(() => showFishroomSubTiles = !showFishroomSubTiles);
               widget.onTileTap(FishroomOverview());
             },
             isSelected: widget.overview is FishroomOverview,
           ),
+          if (showFishroomSubTiles)
+            Column(
+              children: [
+                _Tile(
+                  title: "Bug Reports",
+                  isSubTile: true,
+                  isSelected: widget.overview is BugReportsList,
+                  onTap: () => widget.onTileTap(BugReportsList()),
+                ),
+                _Tile(
+                  title: "Fish Suggestions",
+                  isSubTile: true,
+                  isSelected: widget.overview is FishSuggestions,
+                  onTap: () => widget.onTileTap(FishSuggestions()),
+                ),
+              ],
+            ),
           _Tile(
             title: "Placeholder",
             subtitle: "Home",
@@ -81,6 +106,7 @@ class _Tile extends StatefulWidget {
     this.icon,
     this.onTap,
     this.isSelected = false,
+    this.isSubTile = false,
   });
 
   final String title;
@@ -88,6 +114,7 @@ class _Tile extends StatefulWidget {
   final IconData? icon;
   final void Function()? onTap;
   final bool isSelected;
+  final bool isSubTile;
 
   @override
   State<_Tile> createState() => _TileState();
@@ -119,16 +146,24 @@ class _TileState extends State<_Tile> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Expanded(
-                child: widget.icon != null
-                    ? Icon(
-                        widget.icon!,
-                        color: widget.isSelected || isHovered
-                            ? Colors.white
-                            : Constants.colors.primary,
-                      )
-                    : SizedBox(),
-              ),
+              if (widget.isSubTile)
+                Icon(Icons.subdirectory_arrow_right,
+                    color: isHovered || widget.isSelected
+                        ? Colors.white
+                        : Constants.colors.primary),
+              if (widget.icon != null)
+                Expanded(
+                  child: widget.icon != null
+                      ? Icon(
+                          widget.icon!,
+                          color: widget.isSelected || isHovered
+                              ? Colors.white
+                              : Constants.colors.primary,
+                        )
+                      : SizedBox(),
+                )
+              else
+                Gap(10),
               Expanded(
                 flex: 6,
                 child: Column(

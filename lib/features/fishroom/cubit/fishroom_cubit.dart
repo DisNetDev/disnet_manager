@@ -1,5 +1,6 @@
 import 'package:disnet_manager/enums/app.dart';
 import 'package:disnet_manager/models/bug_report.dart';
+import 'package:disnet_manager/models/fish_suggestion.dart';
 import 'package:disnet_manager/usecases/init_sb.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -43,7 +44,7 @@ class FishroomCubit extends Cubit<FishroomState> {
     }
   }
 
-  Future<void> toggleResolved(BugReport report) async {
+  Future<void> toggleResolvedBugReport(BugReport report) async {
     try {
       await fishroomAdmin
           .from("bug_reports")
@@ -54,6 +55,25 @@ class FishroomCubit extends Cubit<FishroomState> {
                   ? report.copyWith(isResolved: !report.isResolved)
                   : e)
               .toList()));
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> getFishSuggestions() async {
+    try {
+      final response = await fishroomAdmin
+          .from('fish_suggestions')
+          .select("""*, user:users(*), fish:fish(*)""").order('created_at',
+              ascending: false);
+      if (response.isNotEmpty) {
+        final suggestions = (response as List)
+            .map((e) => FishSuggestion.fromJson(e as Map<String, dynamic>))
+            .toList();
+        emit(state.copyWith(fishSuggestions: suggestions));
+      } else {
+        emit(state.copyWith(fishSuggestions: []));
+      }
     } catch (e) {
       rethrow;
     }

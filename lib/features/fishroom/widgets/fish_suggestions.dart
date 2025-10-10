@@ -2,30 +2,36 @@ import 'package:disnet_manager/features/fishroom/cubit/fishroom_cubit.dart';
 import 'package:disnet_manager/features/loader/main_loader.dart';
 import 'package:disnet_manager/models/constants.dart';
 import 'package:disnet_manager/widgets/custom_list_item.dart';
-import 'package:disnet_manager/widgets/opened_bug_report.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 
-class BugReportsList extends StatefulWidget {
-  const BugReportsList({super.key});
+class FishSuggestions extends StatefulWidget {
+  const FishSuggestions({super.key});
 
   @override
-  State<BugReportsList> createState() => _BugReportsListState();
+  State<FishSuggestions> createState() => _FishSuggestionsState();
 }
 
-class _BugReportsListState extends State<BugReportsList> {
+class _FishSuggestionsState extends State<FishSuggestions> {
   bool loading = false;
+
+  FishroomCubit get cubit => context.read<FishroomCubit>();
 
   Future<void> _refreshBugReports() async {
     setState(() => loading = true);
-    await context.read<FishroomCubit>().getBugReports();
+    try {
+      await cubit.getFishSuggestions();
+    } catch (e) {
+      setState(() => loading = false);
+    }
     setState(() => loading = false);
   }
 
   @override
   void initState() {
     _refreshBugReports();
+
     super.initState();
   }
 
@@ -35,7 +41,7 @@ class _BugReportsListState extends State<BugReportsList> {
       physics: AlwaysScrollableScrollPhysics(),
       child: BlocBuilder<FishroomCubit, FishroomState>(
         builder: (context, state) {
-          List<int> itemsFlex = [2, 5, 1, 2, 1, 1];
+          List<int> itemsFlex = [1, 1, 1, 2];
           return loading
               ? Center(child: MainLoader())
               : Column(
@@ -43,7 +49,7 @@ class _BugReportsListState extends State<BugReportsList> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                       Text(
-                        " Bug Reports",
+                        " Fish Suggestions",
                         style: Constants.textStyles.title,
                         textAlign: TextAlign.left,
                       ),
@@ -67,45 +73,38 @@ class _BugReportsListState extends State<BugReportsList> {
                                     child: Text("User", style: headerStyle)),
                                 Expanded(
                                     flex: itemsFlex[1],
-                                    child: Text("Description",
+                                    child: Text("Common Name",
                                         style: headerStyle)),
                                 Expanded(
-                                  flex: itemsFlex[2],
-                                  child:
-                                      Text("App Version", style: headerStyle),
-                                ),
+                                    flex: itemsFlex[2],
+                                    child: Text("Scientific Name",
+                                        style: headerStyle)),
                                 Expanded(
                                     flex: itemsFlex[3],
                                     child:
-                                        Text("Created At", style: headerStyle)),
-                                Expanded(
-                                    flex: itemsFlex[4],
-                                    child:
-                                        Text("Updated At", style: headerStyle)),
-                                Expanded(
-                                    flex: itemsFlex[5],
-                                    child: Text("Status", style: headerStyle)),
+                                        Text("Image URL", style: headerStyle)),
                               ],
                             );
                           },
                         ),
                       ),
-                      ...List.generate(state.bugReports.length, (index) {
-                        final report = state.bugReports[index];
+                      ...List.generate(state.fishSuggestions.length, (index) {
                         return CustomListItem(
-                          openedWidget: OpenedBugReport(
-                              bugReport: state.bugReports[index]),
                           itemsFlex: itemsFlex,
                           items: [
-                            report.user.email,
-                            report.description,
-                            report.appVersion,
-                            report.createdAt?.toString() ?? '',
-                            report.updatedAt?.toString() ?? '',
-                            report.isResolved ? 'Resolved' : 'Unresolved',
+                            state.fishSuggestions[index].createdBy?.email ??
+                                "Unknown",
+                            state.fishSuggestions[index].commonName ??
+                                "Unknown",
+                            state.fishSuggestions[index].scientificName ??
+                                "Unknown",
+                            state.fishSuggestions[index].imageUrl ?? "Unknown",
                           ],
                           secondaryItems: [
-                            report.user.name ?? 'No Name',
+                            "Original Fish Entry:",
+                            state.fishSuggestions[index].commonName ?? "",
+                            state.fishSuggestions[index].scientificName ?? "",
+                            state.fishSuggestions[index].imageUrl ?? "",
                           ],
                           index: index,
                         );

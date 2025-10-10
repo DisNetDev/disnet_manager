@@ -1,3 +1,4 @@
+import 'package:disnet_manager/enums/app.dart';
 import 'package:disnet_manager/features/homescreen/cubit/dashboard_cubit.dart';
 import 'package:disnet_manager/models/constants.dart';
 import 'package:disnet_manager/widgets/counter_widget.dart';
@@ -5,7 +6,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key});
+  const Dashboard({super.key, this.app});
+
+  final App? app;
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -15,8 +18,8 @@ class _DashboardState extends State<Dashboard> {
   @override
   void initState() {
     super.initState();
-    context.read<DashboardCubit>().getUsers();
-    context.read<DashboardCubit>().getSubscriptions();
+    context.read<DashboardCubit>().getUsers(app: widget.app);
+    context.read<DashboardCubit>().getSubscriptions(app: widget.app);
   }
 
   @override

@@ -58,7 +58,8 @@ class _OpenedBugReportState extends State<OpenedBugReport> {
                 callback: () async {
                   try {
                     setState(() => loadingResolvedButton = true);
-                    await fishroomCubit.toggleResolved(widget.bugReport);
+                    await fishroomCubit
+                        .toggleResolvedBugReport(widget.bugReport);
                     setState(() => loadingResolvedButton = false);
                   } catch (e) {
                     setState(() => loadingResolvedButton = false);
