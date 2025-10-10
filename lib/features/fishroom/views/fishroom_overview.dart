@@ -1,5 +1,7 @@
 import 'package:disnet_manager/features/fishroom/widgets/bug_reports_list.dart';
+import 'package:disnet_manager/models/constants.dart';
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 
 class FishroomOverview extends StatelessWidget {
   const FishroomOverview({super.key});
@@ -11,7 +13,16 @@ class FishroomOverview extends StatelessWidget {
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         child: Column(
-          children: [BugReportsList()],
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              " Bug Reports",
+              style: Constants.textStyles.title,
+              textAlign: TextAlign.left,
+            ),
+            Gap(20),
+            BugReportsList()
+          ],
         ),
       ),
     );

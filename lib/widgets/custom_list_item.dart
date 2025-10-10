@@ -25,10 +25,12 @@ class _CustomListItemState extends State<CustomListItem>
   bool opened = false;
   bool hovering = false;
 
+  Duration get animationDuration => const Duration(milliseconds: 300);
+
   @override
   Widget build(BuildContext context) {
     return AnimatedSize(
-      duration: Duration(milliseconds: 500),
+      duration: animationDuration,
       curve: Curves.ease,
       child: opened && widget.openedWidget != null
           ? Stack(
@@ -45,7 +47,7 @@ class _CustomListItemState extends State<CustomListItem>
             )
           : InkWell(
               hoverColor: Constants.colors.primary,
-              hoverDuration: Duration(milliseconds: 200),
+              hoverDuration: animationDuration,
               onHover: (value) => setState(() => hovering = value),
               onTap: widget.openedWidget != null
                   ? () {
@@ -77,21 +79,31 @@ class _CustomListItemState extends State<CustomListItem>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              widget.items[i],
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                            AnimatedDefaultTextStyle(
+                              duration: animationDuration -
+                                  const Duration(milliseconds: 100),
+                              curve: Curves.easeInOut,
                               style: Constants.textStyles.description.copyWith(
                                 color: hovering ? Colors.white : Colors.black,
                               ),
-                            ),
-                            if (i < widget.secondaryItems.length)
-                              Text(
-                                widget.secondaryItems[i],
+                              child: Text(
+                                widget.items[i],
                                 overflow: TextOverflow.ellipsis,
                                 maxLines: 1,
+                              ),
+                            ),
+                            if (i < widget.secondaryItems.length)
+                              AnimatedDefaultTextStyle(
+                                duration: animationDuration -
+                                    const Duration(milliseconds: 100),
+                                curve: Curves.easeInOut,
                                 style: Constants.textStyles.data.copyWith(
                                   color: hovering ? Colors.white : Colors.black,
+                                ),
+                                child: Text(
+                                  widget.secondaryItems[i],
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
                                 ),
                               ),
                           ],

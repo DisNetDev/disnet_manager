@@ -41,39 +41,44 @@ class _BugReportsListState extends State<BugReportsList> {
                 children: [
                     Padding(
                       padding: const EdgeInsets.all(4.0),
-                      child: Builder(builder: (context) {
-                        TextStyle headerStyle =
-                            Constants.textStyles.description.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        );
-                        return Row(
-                          spacing: 20,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                                flex: itemsFlex[0],
-                                child: Text("User", style: headerStyle)),
-                            Expanded(
-                                flex: itemsFlex[1],
-                                child: Text("Description", style: headerStyle)),
-                            Expanded(
-                              flex: itemsFlex[2],
-                              child: Text("App Version", style: headerStyle),
-                            ),
-                            Expanded(
-                                flex: itemsFlex[3],
-                                child: Text("Created At", style: headerStyle)),
-                            Expanded(
-                                flex: itemsFlex[4],
-                                child: Text("Updated At", style: headerStyle)),
-                            Expanded(
-                                flex: itemsFlex[5],
-                                child: Text("Status", style: headerStyle)),
-                          ],
-                        );
-                      }),
+                      child: Builder(
+                        builder: (context) {
+                          TextStyle headerStyle =
+                              Constants.textStyles.description.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          );
+                          return Row(
+                            spacing: 20,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  flex: itemsFlex[0],
+                                  child: Text("User", style: headerStyle)),
+                              Expanded(
+                                  flex: itemsFlex[1],
+                                  child:
+                                      Text("Description", style: headerStyle)),
+                              Expanded(
+                                flex: itemsFlex[2],
+                                child: Text("App Version", style: headerStyle),
+                              ),
+                              Expanded(
+                                  flex: itemsFlex[3],
+                                  child:
+                                      Text("Created At", style: headerStyle)),
+                              Expanded(
+                                  flex: itemsFlex[4],
+                                  child:
+                                      Text("Updated At", style: headerStyle)),
+                              Expanded(
+                                  flex: itemsFlex[5],
+                                  child: Text("Status", style: headerStyle)),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                     ...List.generate(state.bugReports.length, (index) {
                       final report = state.bugReports[index];
