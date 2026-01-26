@@ -1,3 +1,3 @@
 # disnet_manager
 
-A new Flutter project.
+An admin panel for my other production apps. Still a work in progress.
