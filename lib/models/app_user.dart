@@ -36,7 +36,7 @@ class AppUser {
       'id': id,
       'name': name,
       'email': email,
-      'is_pro': isPro,
+      'premium': isPro,
       'next_pro_check': nextProCheck?.toIso8601String(),
     };
   }
@@ -46,7 +46,7 @@ class AppUser {
       id: map['id'] as String,
       name: map['username'] as String?,
       email: map['email'] as String,
-      isPro: map['is_pro'] as bool? ?? false,
+      isPro: map['premium'] as bool? ?? map['is_pro'] as bool? ?? false,
       nextProCheck: map['next_pro_check'] != null
           ? DateTime.tryParse(map['next_pro_check'] as String)
           : null,

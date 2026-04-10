@@ -1,9 +1,11 @@
 import 'package:disnet_manager/enums/app.dart';
-import 'package:disnet_manager/widgets/action_button.dart';
 import 'package:disnet_manager/features/fishroom/widgets/bug_reports_list.dart';
 import 'package:disnet_manager/features/fishroom/widgets/fish_suggestions.dart';
+import 'package:disnet_manager/features/fishroom/widgets/tanks_list.dart';
+import 'package:disnet_manager/features/fishroom/widgets/users_list.dart';
 import 'package:disnet_manager/features/homescreen/cubit/dashboard_cubit.dart';
 import 'package:disnet_manager/models/constants.dart';
+import 'package:disnet_manager/widgets/action_button.dart';
 import 'package:disnet_manager/widgets/counter_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,6 +44,38 @@ class _FishroomOverviewState extends State<FishroomOverview> {
           body: const Padding(
             padding: EdgeInsets.all(20),
             child: FishSuggestions(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openUsers() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text('All Users', style: Constants.textStyles.title4),
+          ),
+          body: const Padding(
+            padding: EdgeInsets.all(20),
+            child: UsersList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openTanks() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text('All Tanks', style: Constants.textStyles.title4),
+          ),
+          body: const Padding(
+            padding: EdgeInsets.all(20),
+            child: TanksList(),
           ),
         ),
       ),
@@ -112,6 +146,20 @@ class _FishroomOverviewState extends State<FishroomOverview> {
                         label: 'Fish Suggestions',
                         subtitle: 'Inspect suggestions from the community',
                       ),
+                      const SizedBox(height: 12),
+                      ActionButton(
+                        onPressed: _openUsers,
+                        icon: Icons.people_outline,
+                        label: 'All Users',
+                        subtitle: 'Review each Fishroom account and details',
+                      ),
+                      const SizedBox(height: 12),
+                      ActionButton(
+                        onPressed: _openTanks,
+                        icon: Icons.water_outlined,
+                        label: 'All Tanks',
+                        subtitle: 'Inspect tank metadata and ownership',
+                      ),
                     ],
                   );
                 }
@@ -133,6 +181,24 @@ class _FishroomOverviewState extends State<FishroomOverview> {
                         icon: Icons.lightbulb_outline,
                         label: 'Fish Suggestions',
                         subtitle: 'Inspect suggestions from the community',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ActionButton(
+                        onPressed: _openUsers,
+                        icon: Icons.people_outline,
+                        label: 'All Users',
+                        subtitle: 'Review each Fishroom account and details',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ActionButton(
+                        onPressed: _openTanks,
+                        icon: Icons.water_outlined,
+                        label: 'All Tanks',
+                        subtitle: 'Inspect tank metadata and ownership',
                       ),
                     ),
                   ],

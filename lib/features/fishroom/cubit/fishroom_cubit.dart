@@ -1,6 +1,8 @@
 import 'package:disnet_manager/enums/app.dart';
+import 'package:disnet_manager/models/app_user.dart';
 import 'package:disnet_manager/models/bug_report.dart';
 import 'package:disnet_manager/models/fish_suggestion.dart';
+import 'package:disnet_manager/models/tank.dart';
 import 'package:disnet_manager/usecases/init_sb.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -8,6 +10,44 @@ part 'fishroom_state.dart';
 
 class FishroomCubit extends Cubit<FishroomState> {
   FishroomCubit() : super(FishroomState());
+
+  Future<void> getTanks() async {
+    try {
+      final response =
+          await fishroomAdmin.from('tanks').select('*').order('created_at');
+
+      if (response.isNotEmpty) {
+        final tanks = (response as List)
+            .map((e) => Tank.fromMap(e as Map<String, dynamic>))
+            .toList();
+        emit(state.copyWith(tanks: tanks));
+      } else {
+        emit(state.copyWith(tanks: []));
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> getUsers() async {
+    try {
+      final response = await fishroomAdmin
+          .from('users')
+          .select('*')
+          .order('email', ascending: true);
+
+      if (response.isNotEmpty) {
+        final users = (response as List)
+            .map((e) => AppUser.fromMap(e as Map<String, dynamic>))
+            .toList();
+        emit(state.copyWith(users: users));
+      } else {
+        emit(state.copyWith(users: []));
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
 
   Future<void> getBugReports() async {
     try {
