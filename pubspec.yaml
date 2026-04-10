@@ -1,6 +1,6 @@
 name: disnet_manager
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0
 
 environment:
@@ -20,7 +20,6 @@ dependencies:
   lottie: ^3.3.1
   path_provider: ^2.1.5
   pocketbase: ^0.22.0
-  sentry_flutter: ^8.14.2
   supabase_flutter: ^2.9.0
   toastification: ^3.0.2
   window_manager: ^0.5.1

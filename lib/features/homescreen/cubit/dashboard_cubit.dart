@@ -20,15 +20,6 @@ class DashboardCubit extends Cubit<DashboardState> {
         log(e.toString());
       }
     }
-    if (app == App.placeholder || app == null) {
-      try {
-        final placeholderUsers =
-            await placeholderAdmin.from('profiles').select('*').count();
-        totalCount += placeholderUsers.count;
-      } catch (e) {
-        log(e.toString());
-      }
-    }
 
     emit(state.copyWith(userCount: totalCount));
   }
@@ -43,18 +34,6 @@ class DashboardCubit extends Cubit<DashboardState> {
             .eq('premium', true)
             .count();
         totalCount += fishroomSubscriptions.count;
-      } catch (e) {
-        log(e.toString());
-      }
-    }
-    if (app == App.placeholder || app == null) {
-      try {
-        final placeholderSubscriptions = await placeholderAdmin
-            .from('profiles')
-            .select('*')
-            .eq('is_pro', true)
-            .count();
-        totalCount += placeholderSubscriptions.count;
       } catch (e) {
         log(e.toString());
       }

@@ -8,13 +8,17 @@ class CustomListItem extends StatefulWidget {
       this.secondaryItems = const [],
       required this.itemsFlex,
       this.openedWidget,
-      this.index});
+      this.index,
+      this.trailingWidget,
+      this.trailingFlex = 1});
 
   final List<String> items;
   final List<String> secondaryItems;
   final List<int> itemsFlex;
   final int? index;
   final Widget? openedWidget;
+  final Widget? trailingWidget;
+  final int trailingFlex;
 
   @override
   State<CustomListItem> createState() => _CustomListItemState();
@@ -67,50 +71,62 @@ class _CustomListItemState extends State<CustomListItem>
                 child: Row(
                   spacing: 20,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(
-                    widget.items.length,
-                    (i) {
-                      final flex = (i < widget.itemsFlex.length)
-                          ? widget.itemsFlex[i]
-                          : 1;
-                      return Expanded(
-                        flex: flex,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            AnimatedDefaultTextStyle(
-                              duration: animationDuration -
-                                  const Duration(milliseconds: 100),
-                              curve: Curves.easeInOut,
-                              style: Constants.textStyles.description.copyWith(
-                                color: hovering ? Colors.white : Colors.black,
-                              ),
-                              child: Text(
-                                widget.items[i],
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                              ),
-                            ),
-                            if (i < widget.secondaryItems.length)
+                  children: [
+                    ...List.generate(
+                      widget.items.length,
+                      (i) {
+                        final flex = (i < widget.itemsFlex.length)
+                            ? widget.itemsFlex[i]
+                            : 1;
+                        return Expanded(
+                          flex: flex,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
                               AnimatedDefaultTextStyle(
                                 duration: animationDuration -
                                     const Duration(milliseconds: 100),
                                 curve: Curves.easeInOut,
-                                style: Constants.textStyles.data.copyWith(
+                                style:
+                                    Constants.textStyles.description.copyWith(
                                   color: hovering ? Colors.white : Colors.black,
                                 ),
                                 child: Text(
-                                  widget.secondaryItems[i],
+                                  widget.items[i],
                                   overflow: TextOverflow.ellipsis,
                                   maxLines: 1,
                                 ),
                               ),
-                          ],
+                              if (i < widget.secondaryItems.length)
+                                AnimatedDefaultTextStyle(
+                                  duration: animationDuration -
+                                      const Duration(milliseconds: 100),
+                                  curve: Curves.easeInOut,
+                                  style: Constants.textStyles.data.copyWith(
+                                    color:
+                                        hovering ? Colors.white : Colors.black,
+                                  ),
+                                  child: Text(
+                                    widget.secondaryItems[i],
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    if (widget.trailingWidget != null)
+                      Expanded(
+                        flex: widget.trailingFlex,
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: widget.trailingWidget!,
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                  ],
                 ),
               ),
             ),

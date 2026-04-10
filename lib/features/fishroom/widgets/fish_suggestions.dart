@@ -1,6 +1,7 @@
 import 'package:disnet_manager/features/fishroom/cubit/fishroom_cubit.dart';
 import 'package:disnet_manager/features/loader/main_loader.dart';
 import 'package:disnet_manager/models/constants.dart';
+import 'package:disnet_manager/widgets/button.dart';
 import 'package:disnet_manager/widgets/custom_list_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,22 +16,149 @@ class FishSuggestions extends StatefulWidget {
 
 class _FishSuggestionsState extends State<FishSuggestions> {
   bool loading = false;
+  final Set<String> _acceptingSuggestionIds = <String>{};
+  final Set<String> _removingSuggestionIds = <String>{};
 
   FishroomCubit get cubit => context.read<FishroomCubit>();
 
-  Future<void> _refreshBugReports() async {
+  Future<void> _refreshFishSuggestions() async {
     setState(() => loading = true);
     try {
       await cubit.getFishSuggestions();
-    } catch (e) {
-      setState(() => loading = false);
+    } finally {
+      if (mounted) {
+        setState(() => loading = false);
+      }
     }
-    setState(() => loading = false);
+  }
+
+  Future<void> _acceptSuggestion(String suggestionId) async {
+    final shouldAccept = await _confirmAcceptSuggestion();
+    if (!shouldAccept) {
+      return;
+    }
+
+    if (_acceptingSuggestionIds.contains(suggestionId)) {
+      return;
+    }
+
+    setState(() => _acceptingSuggestionIds.add(suggestionId));
+    try {
+      await cubit.acceptFishSuggestion(suggestionId);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Suggestion accepted successfully.')),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to accept suggestion. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _acceptingSuggestionIds.remove(suggestionId));
+      }
+    }
+  }
+
+  Future<void> _removeSuggestion(String suggestionId) async {
+    final shouldRemove = await _confirmRemoveSuggestion();
+    if (!shouldRemove) {
+      return;
+    }
+
+    if (_removingSuggestionIds.contains(suggestionId)) {
+      return;
+    }
+
+    setState(() => _removingSuggestionIds.add(suggestionId));
+    try {
+      await cubit.removeFishSuggestion(suggestionId);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Suggestion removed successfully.')),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to remove suggestion. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _removingSuggestionIds.remove(suggestionId));
+      }
+    }
+  }
+
+  Future<bool> _confirmAcceptSuggestion() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Accept Suggestion'),
+          content: const Text(
+            'This will upsert the suggested fish into your dataset. Continue?',
+          ),
+          actions: [
+            Button(
+              text: 'Cancel',
+              secondary: true,
+              callback: () => Navigator.of(context).pop(false),
+            ),
+            Button(
+              text: 'Accept',
+              callback: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  Future<bool> _confirmRemoveSuggestion() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Remove Suggestion'),
+          content: const Text(
+            'This will permanently remove the suggestion entry. Continue?',
+          ),
+          actions: [
+            Button(
+              text: 'Cancel',
+              secondary: true,
+              callback: () => Navigator.of(context).pop(false),
+            ),
+            Button(
+              text: 'Remove',
+              callback: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   @override
   void initState() {
-    _refreshBugReports();
+    _refreshFishSuggestions();
 
     super.initState();
   }
@@ -83,30 +211,70 @@ class _FishSuggestionsState extends State<FishSuggestions> {
                                     flex: itemsFlex[3],
                                     child:
                                         Text("Image URL", style: headerStyle)),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text("Actions", style: headerStyle),
+                                ),
                               ],
                             );
                           },
                         ),
                       ),
                       ...List.generate(state.fishSuggestions.length, (index) {
+                        final suggestion = state.fishSuggestions[index];
+                        final isAccepting =
+                            _acceptingSuggestionIds.contains(suggestion.id);
+                        final isRemoving =
+                            _removingSuggestionIds.contains(suggestion.id);
+                        final isBusy = isAccepting || isRemoving;
+
                         return CustomListItem(
                           itemsFlex: itemsFlex,
                           items: [
-                            state.fishSuggestions[index].createdBy?.email ??
-                                "Unknown",
-                            state.fishSuggestions[index].commonName ??
-                                "Unknown",
-                            state.fishSuggestions[index].scientificName ??
-                                "Unknown",
-                            state.fishSuggestions[index].imageUrl ?? "Unknown",
+                            suggestion.createdBy?.email ?? "Unknown",
+                            suggestion.commonName ?? "Unknown",
+                            suggestion.scientificName ?? "Unknown",
+                            suggestion.imageUrl ?? "Unknown",
                           ],
                           secondaryItems: [
                             "Original Fish Entry:",
-                            state.fishSuggestions[index].commonName ?? "",
-                            state.fishSuggestions[index].scientificName ?? "",
-                            state.fishSuggestions[index].imageUrl ?? "",
+                            suggestion.commonName ?? "",
+                            suggestion.scientificName ?? "",
+                            suggestion.imageUrl ?? "",
                           ],
                           index: index,
+                          trailingFlex: 2,
+                          trailingWidget: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              Opacity(
+                                opacity: isBusy && !isAccepting ? 0.5 : 1,
+                                child: IgnorePointer(
+                                  ignoring: isBusy && !isAccepting,
+                                  child: Button(
+                                    text: 'Accept',
+                                    loading: isAccepting,
+                                    callback: () =>
+                                        _acceptSuggestion(suggestion.id),
+                                  ),
+                                ),
+                              ),
+                              Opacity(
+                                opacity: isBusy && !isRemoving ? 0.5 : 1,
+                                child: IgnorePointer(
+                                  ignoring: isBusy && !isRemoving,
+                                  child: Button(
+                                    text: 'Remove',
+                                    secondary: true,
+                                    loading: isRemoving,
+                                    callback: () =>
+                                        _removeSuggestion(suggestion.id),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         );
                       }),
                     ]);

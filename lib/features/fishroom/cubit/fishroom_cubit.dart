@@ -78,4 +78,42 @@ class FishroomCubit extends Cubit<FishroomState> {
       rethrow;
     }
   }
+
+  Future<void> acceptFishSuggestion(String fishSuggestionId) async {
+    try {
+      await fishroomAdmin.rpc(
+        'upsert_fish_from_suggestion',
+        params: {'p_fish_suggestion_id': fishSuggestionId},
+      );
+
+      emit(
+        state.copyWith(
+          fishSuggestions: state.fishSuggestions
+              .where((suggestion) => suggestion.id != fishSuggestionId)
+              .toList(),
+        ),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> removeFishSuggestion(String fishSuggestionId) async {
+    try {
+      await fishroomAdmin
+          .from('fish_suggestions')
+          .delete()
+          .eq('id', fishSuggestionId);
+
+      emit(
+        state.copyWith(
+          fishSuggestions: state.fishSuggestions
+              .where((suggestion) => suggestion.id != fishSuggestionId)
+              .toList(),
+        ),
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

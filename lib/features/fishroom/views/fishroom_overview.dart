@@ -1,4 +1,7 @@
 import 'package:disnet_manager/enums/app.dart';
+import 'package:disnet_manager/widgets/action_button.dart';
+import 'package:disnet_manager/features/fishroom/widgets/bug_reports_list.dart';
+import 'package:disnet_manager/features/fishroom/widgets/fish_suggestions.dart';
 import 'package:disnet_manager/features/homescreen/cubit/dashboard_cubit.dart';
 import 'package:disnet_manager/models/constants.dart';
 import 'package:disnet_manager/widgets/counter_widget.dart';
@@ -13,6 +16,38 @@ class FishroomOverview extends StatefulWidget {
 }
 
 class _FishroomOverviewState extends State<FishroomOverview> {
+  void _openBugReports() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text('Bug Reports', style: Constants.textStyles.title4),
+          ),
+          body: const Padding(
+            padding: EdgeInsets.all(20),
+            child: BugReportsList(),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _openFishSuggestions() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => Scaffold(
+          appBar: AppBar(
+            title: Text('Fish Suggestions', style: Constants.textStyles.title4),
+          ),
+          body: const Padding(
+            padding: EdgeInsets.all(20),
+            child: FishSuggestions(),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -50,11 +85,56 @@ class _FishroomOverviewState extends State<FishroomOverview> {
                         count: state.subscriptionCount,
                         title: "Subscriptions",
                         subtitle: "Active"),
-                    // CounterWidget(
-                    //     count: state.projectedRevenue?.toInt(),
-                    //     prefix: "\$",
-                    //     title: "Projected",
-                    //     subtitle: "Monthly Revenue"),
+                  ],
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 700;
+
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      ActionButton(
+                        onPressed: _openBugReports,
+                        icon: Icons.bug_report,
+                        label: 'Bug Reports',
+                        subtitle: 'Review and manage reported issues',
+                      ),
+                      const SizedBox(height: 12),
+                      ActionButton(
+                        onPressed: _openFishSuggestions,
+                        icon: Icons.lightbulb_outline,
+                        label: 'Fish Suggestions',
+                        subtitle: 'Inspect suggestions from the community',
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: ActionButton(
+                        onPressed: _openBugReports,
+                        icon: Icons.bug_report,
+                        label: 'Bug Reports',
+                        subtitle: 'Review and manage reported issues',
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ActionButton(
+                        onPressed: _openFishSuggestions,
+                        icon: Icons.lightbulb_outline,
+                        label: 'Fish Suggestions',
+                        subtitle: 'Inspect suggestions from the community',
+                      ),
+                    ),
                   ],
                 );
               },

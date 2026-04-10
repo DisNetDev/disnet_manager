@@ -1,4 +1,3 @@
 enum App {
   fishroom,
-  placeholder,
 }
