@@ -12,6 +12,7 @@ class Tank {
   final List<dynamic> targets;
   final List<String> achievementIds;
   final int? streak;
+  final int readingCount;
 
   Tank({
     required this.id,
@@ -27,6 +28,7 @@ class Tank {
     this.targets = const [],
     this.achievementIds = const [],
     this.streak,
+    this.readingCount = 0,
   });
 
   factory Tank.fromMap(Map<String, dynamic> map) {
@@ -48,6 +50,7 @@ class Tank {
           .map((item) => item.toString())
           .toList(),
       streak: (map['streak'] as num?)?.toInt(),
+      readingCount: (map['reading_count'] as num?)?.toInt() ?? 0,
     );
   }
 }

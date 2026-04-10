@@ -15,11 +15,28 @@ class FishroomCubit extends Cubit<FishroomState> {
     try {
       final response =
           await fishroomAdmin.from('tanks').select('*').order('created_at');
+      final tankReadings = await fishroomAdmin.from('tank_readings').select(
+            'tank_id',
+          );
+
+      final readingCounts = <String, int>{};
+      for (final reading in tankReadings as List) {
+        final tankId = (reading as Map<String, dynamic>)['tank_id'] as String?;
+        if (tankId == null || tankId.isEmpty) {
+          continue;
+        }
+
+        readingCounts.update(tankId, (count) => count + 1, ifAbsent: () => 1);
+      }
 
       if (response.isNotEmpty) {
-        final tanks = (response as List)
-            .map((e) => Tank.fromMap(e as Map<String, dynamic>))
-            .toList();
+        final tanks = (response as List).map((e) {
+          final tank = e as Map<String, dynamic>;
+          return Tank.fromMap({
+            ...tank,
+            'reading_count': readingCounts[tank['id']] ?? 0,
+          });
+        }).toList();
         emit(state.copyWith(tanks: tanks));
       } else {
         emit(state.copyWith(tanks: []));

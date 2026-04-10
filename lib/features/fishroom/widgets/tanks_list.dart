@@ -114,6 +114,9 @@ class _TanksListState extends State<TanksList> {
           Text('Inhabitants', style: Constants.textStyles.title4),
           Text('${tank.inhabitants.length}'),
           const Gap(12),
+          Text('Readings', style: Constants.textStyles.title4),
+          Text('${tank.readingCount}'),
+          const Gap(12),
           Text('Targets', style: Constants.textStyles.title4),
           Text('${tank.targets.length}'),
           const Gap(12),
@@ -151,7 +154,7 @@ class _TanksListState extends State<TanksList> {
       physics: const AlwaysScrollableScrollPhysics(),
       child: BlocBuilder<FishroomCubit, FishroomState>(
         builder: (context, state) {
-          final itemsFlex = [2, 2, 1, 1, 1, 2];
+          final itemsFlex = [2, 2, 1, 1, 1, 1, 2];
           final filteredTanks = _filteredTanks(state.tanks);
 
           return loading
@@ -221,10 +224,14 @@ class _TanksListState extends State<TanksList> {
                                   ),
                                   Expanded(
                                     flex: itemsFlex[4],
-                                    child: Text('Streak', style: headerStyle),
+                                    child: Text('Readings', style: headerStyle),
                                   ),
                                   Expanded(
                                     flex: itemsFlex[5],
+                                    child: Text('Streak', style: headerStyle),
+                                  ),
+                                  Expanded(
+                                    flex: itemsFlex[6],
                                     child: Text('Owner ID', style: headerStyle),
                                   ),
                                 ],
@@ -250,8 +257,9 @@ class _TanksListState extends State<TanksList> {
                               items: [
                                 tank.name ?? 'Unnamed tank',
                                 tank.tankType ?? 'Unknown',
-                                _sizeLabel(tank),
+                                tank.tankSize.toString(),
                                 '${tank.inhabitants.length}',
+                                '${tank.readingCount}',
                                 tank.streak?.toString() ?? '0',
                                 tank.ownerId ?? 'No owner',
                               ],
@@ -259,7 +267,8 @@ class _TanksListState extends State<TanksList> {
                                 _dateLabel(tank.createdAt),
                                 tank.id,
                                 tank.tankMeasurement ?? 'No unit',
-                                '${tank.targets.length} targets',
+                                'Inhabitants',
+                                'Readings Count',
                                 '${tank.achievementIds.length} achievements',
                                 'Tap to inspect',
                               ],
