@@ -226,22 +226,6 @@ class _CompactHomeLayout extends StatelessWidget {
                     color: Constants.colors.primary,
                   ),
                 ),
-                const Spacer(),
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEDAF0),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'Live',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF341539),
-                    ),
-                  ),
-                ),
               ],
             ),
           ),

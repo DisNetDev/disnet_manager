@@ -80,7 +80,7 @@ class _FishroomOverviewState extends State<FishroomOverview> {
                     CounterWidget(
                         count: state.userCount,
                         title: "Users",
-                        subtitle: "across all apps"),
+                        subtitle: "on Fishroom"),
                     CounterWidget(
                         count: state.subscriptionCount,
                         title: "Subscriptions",
