@@ -1,10 +1,15 @@
+import 'dart:convert';
+
 import 'package:disnet_manager/features/fishroom/cubit/fishroom_cubit.dart';
 import 'package:disnet_manager/features/loader/main_loader.dart';
 import 'package:disnet_manager/models/app_user.dart';
 import 'package:disnet_manager/models/constants.dart';
 import 'package:disnet_manager/models/tank.dart';
+import 'package:disnet_manager/models/tank_inhabitant.dart';
+import 'package:disnet_manager/models/tank_target.dart';
 import 'package:disnet_manager/widgets/custom_list_item.dart';
 import 'package:disnet_manager/widgets/search_field.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
@@ -34,8 +39,30 @@ class _TanksListState extends State<TanksList> {
           (tank.tankType ?? '').toLowerCase().contains(query) ||
           (tank.ownerId ?? '').toLowerCase().contains(query) ||
           tank.id.toLowerCase().contains(query) ||
-          _sizeLabel(tank).toLowerCase().contains(query);
+          _sizeLabel(tank).toLowerCase().contains(query) ||
+          _inhabitantsSearchLabel(tank).contains(query) ||
+          _targetsSearchLabel(tank).contains(query);
     }).toList();
+  }
+
+  String _inhabitantsSearchLabel(Tank tank) {
+    return tank.inhabitants
+        .expand((inhabitant) => [
+              inhabitant.displayName,
+              inhabitant.petName,
+              inhabitant.scientificName,
+            ])
+        .whereType<String>()
+        .join(' ')
+        .toLowerCase();
+  }
+
+  String _targetsSearchLabel(Tank tank) {
+    return tank.targets
+        .expand(
+            (target) => [target.label, target.rangeLabel, target.shortLabel])
+        .join(' ')
+        .toLowerCase();
   }
 
   Future<void> _refreshTanks() async {
@@ -84,6 +111,40 @@ class _TanksListState extends State<TanksList> {
     final minute = localValue.minute.toString().padLeft(2, '0');
 
     return '${localValue.year}-$month-$day $hour:$minute';
+  }
+
+  String _inhabitantPreview(Tank tank) {
+    if (tank.inhabitants.isEmpty) {
+      return 'None listed';
+    }
+
+    final preview = tank.inhabitants
+        .take(2)
+        .map((inhabitant) => inhabitant.displayName)
+        .join(', ');
+
+    if (tank.inhabitants.length <= 2) {
+      return preview;
+    }
+
+    return '$preview +${tank.inhabitants.length - 2} more';
+  }
+
+  String _targetPreview(Tank tank) {
+    if (tank.targets.isEmpty) {
+      return 'No targets';
+    }
+
+    final preview = tank.targets
+        .take(2)
+        .map((target) => '${target.label} ${target.shortLabel}')
+        .join(' • ');
+
+    if (tank.targets.length <= 2) {
+      return preview;
+    }
+
+    return '$preview +${tank.targets.length - 2} more';
   }
 
   Widget _buildTankDetails(Tank tank, AppUser? owner) {
@@ -151,7 +212,8 @@ class _TanksListState extends State<TanksList> {
                             searchController.clear();
                             setState(() => searchQuery = '');
                           },
-                          hintText: 'Search by name, type, owner id, or size',
+                          hintText:
+                              'Search by name, type, inhabitants, owner id, or size',
                         ),
                         const Gap(16),
                         Padding(
@@ -183,7 +245,7 @@ class _TanksListState extends State<TanksList> {
                                   ),
                                   Expanded(
                                     flex: itemsFlex[3],
-                                    child: Text('Fish', style: headerStyle),
+                                    child: Text('Stock', style: headerStyle),
                                   ),
                                   Expanded(
                                     flex: itemsFlex[4],
@@ -224,7 +286,7 @@ class _TanksListState extends State<TanksList> {
                                 tank.name ?? 'Unnamed tank',
                                 tank.tankType ?? 'Unknown',
                                 _sizeLabel(tank),
-                                '${tank.inhabitants.length}',
+                                '${tank.totalInhabitantCount}',
                                 '${tank.readingCount}',
                                 tank.streak?.toString() ?? '0',
                                 tank.ownerId ?? 'No owner',
@@ -234,10 +296,10 @@ class _TanksListState extends State<TanksList> {
                                 tank.id,
                                 owner?.email ??
                                     (tank.tankMeasurement ?? 'No unit'),
-                                'Inhabitants',
-                                'Readings Count',
+                                '${tank.speciesCount} species',
+                                _targetPreview(tank),
                                 '${tank.achievementIds.length} achievements',
-                                'Tap to inspect',
+                                _inhabitantPreview(tank),
                               ],
                               index: index,
                             );
@@ -319,6 +381,224 @@ class _TankDetailsState extends State<_TankDetails> {
     return value.toString();
   }
 
+  String _formatScalar(dynamic value) {
+    if (value == null) {
+      return 'Unknown';
+    }
+
+    if (value is num) {
+      return value == value.roundToDouble()
+          ? value.toInt().toString()
+          : value
+              .toStringAsFixed(2)
+              .replaceFirst(RegExp(r'0+$'), '')
+              .replaceFirst(RegExp(r'\.$'), '');
+    }
+
+    return _formatValue(value);
+  }
+
+  dynamic _decodeStructuredValue(dynamic value) {
+    if (value is String) {
+      final trimmed = value.trim();
+      if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+          (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
+        try {
+          return jsonDecode(trimmed);
+        } catch (_) {
+          return value;
+        }
+      }
+    }
+
+    return value;
+  }
+
+  String _readingLabel(String key) {
+    switch (key) {
+      case 'ph':
+        return 'pH';
+      case 'kh':
+        return 'KH';
+      case 'gh':
+        return 'GH';
+      case 'created_at':
+        return 'Created At';
+      case 'updated_at':
+        return 'Updated At';
+      default:
+        return _titleCase(key);
+    }
+  }
+
+  bool _isReadingMetric(String key) {
+    const metricKeys = {
+      'ph',
+      'temperature',
+      'ammonia',
+      'nitrite',
+      'nitrate',
+      'salinity',
+      'kh',
+      'gh',
+    };
+
+    return metricKeys.contains(key);
+  }
+
+  Map<String, dynamic> _formattedReadingMap(Map<String, dynamic> reading) {
+    final formatted = <String, dynamic>{};
+    for (final entry in _readingEntries(reading)) {
+      final key = _readingLabel(entry.key);
+      final rawValue = _decodeStructuredValue(entry.value);
+      final value = entry.key.endsWith('_at')
+          ? DateTime.tryParse(rawValue.toString())?.toLocal() ?? rawValue
+          : rawValue;
+      if (value is Map) {
+        formatted[key] = _formattedNestedMap(value);
+      } else if (value is List) {
+        formatted[key] = _formattedNestedList(value);
+      } else {
+        formatted[key] =
+            value is num ? _formatScalar(value) : _formatValue(value);
+      }
+    }
+
+    return formatted;
+  }
+
+  Map<String, dynamic> _formattedNestedMap(Map<dynamic, dynamic> value) {
+    final formatted = <String, dynamic>{};
+    for (final entry in value.entries) {
+      final key = _titleCase(entry.key.toString());
+      final nestedValue = _decodeStructuredValue(entry.value);
+      if (nestedValue is Map) {
+        formatted[key] = _formattedNestedMap(nestedValue);
+      } else if (nestedValue is List) {
+        formatted[key] = _formattedNestedList(nestedValue);
+      } else if (nestedValue is num) {
+        formatted[key] = _formatScalar(nestedValue);
+      } else {
+        formatted[key] = _formatValue(nestedValue);
+      }
+    }
+
+    return formatted;
+  }
+
+  List<dynamic> _formattedNestedList(List<dynamic> value) {
+    return value.map((item) {
+      final nestedValue = _decodeStructuredValue(item);
+      if (nestedValue is Map) {
+        return _formattedNestedMap(nestedValue);
+      }
+
+      if (nestedValue is List) {
+        return _formattedNestedList(nestedValue);
+      }
+
+      if (nestedValue is num) {
+        return _formatScalar(nestedValue);
+      }
+
+      return _formatValue(nestedValue);
+    }).toList();
+  }
+
+  String _prettyReadingJson(Map<String, dynamic> reading) {
+    const encoder = JsonEncoder.withIndent('  ');
+    return encoder.convert(_formattedReadingMap(reading));
+  }
+
+  bool _hasDataField(Map<String, dynamic> reading) {
+    return reading['data'] != null;
+  }
+
+  dynamic _readingDataField(Map<String, dynamic> reading) {
+    return _decodeStructuredValue(reading['data']);
+  }
+
+  String _prettyDataJson(dynamic value) {
+    const encoder = JsonEncoder.withIndent('  ');
+    final decoded = _decodeStructuredValue(value);
+    if (decoded is Map) {
+      return encoder.convert(_formattedNestedMap(decoded));
+    }
+
+    if (decoded is List) {
+      return encoder.convert(_formattedNestedList(decoded));
+    }
+
+    return _formatValue(decoded);
+  }
+
+  Widget _buildReadingMetricChip(MapEntry<String, dynamic> entry) {
+    return Container(
+      width: 140,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Constants.colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(_readingLabel(entry.key),
+              style: Constants.textStyles.description),
+          const Gap(4),
+          Text(
+            _formatScalar(entry.value),
+            style: Constants.textStyles.title4.copyWith(fontSize: 18),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPrettyJsonBlock(Map<String, dynamic> reading) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F1F8),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Constants.colors.border),
+      ),
+      child: SelectableText(
+        _prettyReadingJson(reading),
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 13,
+          height: 1.5,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDataFieldBlock(dynamic value) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF2F7FB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Constants.colors.border),
+      ),
+      child: SelectableText(
+        _prettyDataJson(value),
+        style: const TextStyle(
+          fontFamily: 'monospace',
+          fontSize: 13,
+          height: 1.5,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
   List<MapEntry<String, dynamic>> _readingEntries(
       Map<String, dynamic> reading) {
     const hiddenKeys = {'id', 'tank_id'};
@@ -336,8 +616,10 @@ class _TankDetailsState extends State<_TankDetails> {
     ];
 
     final entries = reading.entries
-        .where(
-            (entry) => !hiddenKeys.contains(entry.key) && entry.value != null)
+        .where((entry) =>
+            !hiddenKeys.contains(entry.key) &&
+            entry.key != 'data' &&
+            entry.value != null)
         .toList();
 
     entries.sort((a, b) {
@@ -391,6 +673,276 @@ class _TankDetailsState extends State<_TankDetails> {
           Text(label, style: Constants.textStyles.description),
           const Gap(4),
           Text(value, style: Constants.textStyles.title4),
+        ],
+      ),
+    );
+  }
+
+  String _inhabitantsHeadline(Tank tank) {
+    if (tank.inhabitants.isEmpty) {
+      return 'None listed';
+    }
+
+    final names = tank.inhabitants
+        .take(3)
+        .map((inhabitant) => inhabitant.displayName)
+        .join(', ');
+
+    if (tank.inhabitants.length <= 3) {
+      return names;
+    }
+
+    return '$names +${tank.inhabitants.length - 3} more';
+  }
+
+  String _inhabitantIdLabel(String id) {
+    if (id.length <= 8) {
+      return id;
+    }
+
+    return id.substring(0, 8);
+  }
+
+  String _targetsHeadline(Tank tank) {
+    if (tank.targets.isEmpty) {
+      return 'None configured';
+    }
+
+    final names = tank.targets.take(3).map((target) => target.label).join(', ');
+    if (tank.targets.length <= 3) {
+      return names;
+    }
+
+    return '$names +${tank.targets.length - 3} more';
+  }
+
+  Widget _buildTargetChip(TankTarget target) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Constants.colors.primary.withAlpha(10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Constants.colors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(target.label,
+              style: Constants.textStyles.title4.copyWith(fontSize: 16)),
+          const Gap(2),
+          Text(target.shortLabel,
+              style: Constants.textStyles.description
+                  .copyWith(color: Colors.black87)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetsSection() {
+    final targets = widget.tank.targets;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Constants.colors.border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Water Targets'),
+          const Gap(4),
+          Text(
+            targets.isEmpty
+                ? 'No parameter targets have been configured for this tank.'
+                : '${targets.length} target ranges configured for this tank.',
+            style: Constants.textStyles.description,
+          ),
+          if (targets.isNotEmpty) ...[
+            const Gap(16),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: targets.map(_buildTargetChip).toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInhabitantImage(TankInhabitant inhabitant) {
+    final imageUrl = inhabitant.imageUrl?.trim();
+    final hasImage = imageUrl != null && imageUrl.isNotEmpty;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: SizedBox(
+        width: 72,
+        height: 72,
+        child: hasImage
+            ? Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return _buildInhabitantImageFallback();
+                },
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) {
+                    return child;
+                  }
+
+                  return Container(
+                    color: Constants.colors.primary.withAlpha(12),
+                    alignment: Alignment.center,
+                    child: const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  );
+                },
+              )
+            : _buildInhabitantImageFallback(),
+      ),
+    );
+  }
+
+  Widget _buildInhabitantImageFallback() {
+    return Container(
+      color: Constants.colors.primary.withAlpha(12),
+      alignment: Alignment.center,
+      child: Icon(
+        Icons.phishing_outlined,
+        color: Constants.colors.primary,
+        size: 28,
+      ),
+    );
+  }
+
+  Widget _buildInhabitantCard(TankInhabitant inhabitant, int index) {
+    final subtitleStyle = Constants.textStyles.description.copyWith(
+      color: Colors.black87,
+      fontStyle: FontStyle.italic,
+    );
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color:
+            index.isEven ? Constants.colors.primary.withAlpha(8) : Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Constants.colors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildInhabitantImage(inhabitant),
+          const Gap(12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        inhabitant.displayName,
+                        style: Constants.textStyles.title4.copyWith(
+                          fontSize: 18,
+                        ),
+                      ),
+                    ),
+                    const Gap(8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Constants.colors.primary,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '${inhabitant.count}',
+                        style: Constants.textStyles.description.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (inhabitant.scientificName != null) ...[
+                  const Gap(4),
+                  Text(inhabitant.scientificName!, style: subtitleStyle),
+                ],
+                if (inhabitant.hasPetName) ...[
+                  const Gap(8),
+                  Text(
+                    'Pet name: ${inhabitant.petName}',
+                    style: Constants.textStyles.description.copyWith(
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+                const Gap(8),
+                Text(
+                  inhabitant.count == 1
+                      ? '1 individual in this tank'
+                      : '${inhabitant.count} individuals in this tank',
+                  style: Constants.textStyles.description,
+                ),
+                const Gap(4),
+                Text(
+                  'Record ${_inhabitantIdLabel(inhabitant.id)}',
+                  style: Constants.textStyles.data.copyWith(
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInhabitantsSection() {
+    final inhabitants = widget.tank.inhabitants;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        border: Border.all(color: Constants.colors.border),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle('Tank Inhabitants'),
+          const Gap(4),
+          Text(
+            inhabitants.isEmpty
+                ? 'No inhabitants have been listed for this tank.'
+                : '${widget.tank.totalInhabitantCount} total inhabitants across ${widget.tank.speciesCount} species entries.',
+            style: Constants.textStyles.description,
+          ),
+          if (inhabitants.isNotEmpty) ...[
+            const Gap(16),
+            Column(
+              children: List.generate(inhabitants.length, (index) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == inhabitants.length - 1 ? 0 : 12,
+                  ),
+                  child: _buildInhabitantCard(inhabitants[index], index),
+                );
+              }),
+            ),
+          ],
         ],
       ),
     );
@@ -497,6 +1049,10 @@ class _TankDetailsState extends State<_TankDetails> {
   Widget _buildReadingCard(Map<String, dynamic> reading, int index) {
     final entries = _readingEntries(reading);
     final createdAt = reading['created_at'];
+    final metricEntries =
+        entries.where((entry) => _isReadingMetric(entry.key)).toList();
+    final hasDataField = _hasDataField(reading);
+    final dataField = _readingDataField(reading);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -519,20 +1075,45 @@ class _TankDetailsState extends State<_TankDetails> {
           if (entries.isEmpty)
             Text('No reading fields were returned.',
                 style: Constants.textStyles.description)
-          else
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: entries.map((entry) {
-                return SizedBox(
-                  width: 220,
-                  child: _buildInfoRow(
-                    _titleCase(entry.key),
-                    _formatValue(entry.value),
-                  ),
-                );
-              }).toList(),
+          else ...[
+            if (metricEntries.isNotEmpty) ...[
+              Text(
+                'Snapshot',
+                style: Constants.textStyles.description.copyWith(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Gap(10),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: metricEntries.map(_buildReadingMetricChip).toList(),
+              ),
+              const Gap(16),
+            ],
+            if (hasDataField) ...[
+              Text(
+                'Data',
+                style: Constants.textStyles.description.copyWith(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const Gap(10),
+              _buildDataFieldBlock(dataField),
+              const Gap(16),
+            ],
+            Text(
+              'Formatted JSON',
+              style: Constants.textStyles.description.copyWith(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
             ),
+            const Gap(10),
+            _buildPrettyJsonBlock(reading),
+          ],
         ],
       ),
     );
@@ -635,7 +1216,8 @@ class _TankDetailsState extends State<_TankDetails> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              _buildStatChip('Fish', '${tank.inhabitants.length}'),
+              _buildStatChip('Stock', '${tank.totalInhabitantCount}'),
+              _buildStatChip('Species', '${tank.speciesCount}'),
               _buildStatChip('Readings', '${tank.readingCount}'),
               _buildStatChip('Targets', '${tank.targets.length}'),
               _buildStatChip('Achievements', '${tank.achievementIds.length}'),
@@ -664,16 +1246,24 @@ class _TankDetailsState extends State<_TankDetails> {
                     _buildInfoRow(
                         'Owner ID', tank.ownerId ?? 'No owner assigned'),
                     _buildInfoRow(
-                      'Inhabitants',
+                      'Population',
                       tank.inhabitants.isEmpty
                           ? 'None listed'
-                          : tank.inhabitants.join(', '),
+                          : '${tank.totalInhabitantCount} individuals across ${tank.speciesCount} species',
+                    ),
+                    _buildInfoRow(
+                      'Featured Species',
+                      _inhabitantsHeadline(tank),
                     ),
                     _buildInfoRow(
                       'Targets',
                       tank.targets.isEmpty
                           ? 'None configured'
-                          : tank.targets.join(', '),
+                          : '${tank.targets.length} configured ranges',
+                    ),
+                    _buildInfoRow(
+                      'Target Focus',
+                      _targetsHeadline(tank),
                     ),
                     _buildInfoRow(
                       'Achievement IDs',
@@ -709,6 +1299,10 @@ class _TankDetailsState extends State<_TankDetails> {
               );
             },
           ),
+          const Gap(20),
+          _buildTargetsSection(),
+          const Gap(20),
+          _buildInhabitantsSection(),
           const Gap(20),
           _buildReadingsSection(),
         ],

@@ -1,3 +1,6 @@
+import 'package:disnet_manager/models/tank_inhabitant.dart';
+import 'package:disnet_manager/models/tank_target.dart';
+
 class Tank {
   final String id;
   final DateTime? createdAt;
@@ -8,8 +11,8 @@ class Tank {
   final String? name;
   final String? tankType;
   final String? imageLocalPath;
-  final List<dynamic> inhabitants;
-  final List<dynamic> targets;
+  final List<TankInhabitant> inhabitants;
+  final List<TankTarget> targets;
   final List<String> achievementIds;
   final int? streak;
   final int readingCount;
@@ -44,13 +47,34 @@ class Tank {
       name: map['name'] as String?,
       tankType: map['tank_type'] as String?,
       imageLocalPath: map['image_local_path'] as String?,
-      inhabitants: (map['inhabitants'] as List?)?.toList() ?? const [],
-      targets: (map['targets'] as List?)?.toList() ?? const [],
+      inhabitants: _parseInhabitants(map['inhabitants']),
+      targets: _parseTargets(map['targets']),
       achievementIds: ((map['achievement_ids'] as List?) ?? const [])
           .map((item) => item.toString())
           .toList(),
       streak: (map['streak'] as num?)?.toInt(),
       readingCount: (map['reading_count'] as num?)?.toInt() ?? 0,
     );
+  }
+
+  int get totalInhabitantCount =>
+      inhabitants.fold(0, (sum, inhabitant) => sum + inhabitant.count);
+
+  int get speciesCount => inhabitants.length;
+
+  static List<TankInhabitant> _parseInhabitants(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    return value.map(TankInhabitant.fromDynamic).toList();
+  }
+
+  static List<TankTarget> _parseTargets(dynamic value) {
+    if (value is! List) {
+      return const [];
+    }
+
+    return value.map(TankTarget.fromDynamic).toList();
   }
 }
