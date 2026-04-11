@@ -18,6 +18,20 @@ class FishroomOverview extends StatefulWidget {
 }
 
 class _FishroomOverviewState extends State<FishroomOverview> {
+  Widget _buildActionButton({
+    required VoidCallback onPressed,
+    required IconData icon,
+    required String label,
+    required String subtitle,
+  }) {
+    return ActionButton(
+      onPressed: onPressed,
+      icon: icon,
+      label: label,
+      subtitle: subtitle,
+    );
+  }
+
   void _openBugReports() {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -128,73 +142,45 @@ class _FishroomOverviewState extends State<FishroomOverview> {
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final isNarrow = constraints.maxWidth < 700;
+                final isSingleColumn = constraints.maxWidth < 700;
+                final buttonWidth = isSingleColumn
+                    ? constraints.maxWidth
+                    : (constraints.maxWidth - 12) / 2;
 
-                if (isNarrow) {
-                  return Column(
-                    children: [
-                      ActionButton(
-                        onPressed: _openBugReports,
-                        icon: Icons.bug_report,
-                        label: 'Bug Reports',
-                        subtitle: 'Review and manage reported issues',
-                      ),
-                      const SizedBox(height: 12),
-                      ActionButton(
-                        onPressed: _openFishSuggestions,
-                        icon: Icons.lightbulb_outline,
-                        label: 'Fish Suggestions',
-                        subtitle: 'Inspect suggestions from the community',
-                      ),
-                      const SizedBox(height: 12),
-                      ActionButton(
-                        onPressed: _openUsers,
-                        icon: Icons.people_outline,
-                        label: 'All Users',
-                        subtitle: 'Review each Fishroom account and details',
-                      ),
-                      const SizedBox(height: 12),
-                      ActionButton(
-                        onPressed: _openTanks,
-                        icon: Icons.water_outlined,
-                        label: 'All Tanks',
-                        subtitle: 'Inspect tank metadata and ownership',
-                      ),
-                    ],
-                  );
-                }
-
-                return Row(
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
                   children: [
-                    Expanded(
-                      child: ActionButton(
+                    SizedBox(
+                      width: buttonWidth,
+                      child: _buildActionButton(
                         onPressed: _openBugReports,
                         icon: Icons.bug_report,
                         label: 'Bug Reports',
                         subtitle: 'Review and manage reported issues',
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ActionButton(
+                    SizedBox(
+                      width: buttonWidth,
+                      child: _buildActionButton(
                         onPressed: _openFishSuggestions,
                         icon: Icons.lightbulb_outline,
                         label: 'Fish Suggestions',
                         subtitle: 'Inspect suggestions from the community',
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ActionButton(
+                    SizedBox(
+                      width: buttonWidth,
+                      child: _buildActionButton(
                         onPressed: _openUsers,
                         icon: Icons.people_outline,
                         label: 'All Users',
                         subtitle: 'Review each Fishroom account and details',
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ActionButton(
+                    SizedBox(
+                      width: buttonWidth,
+                      child: _buildActionButton(
                         onPressed: _openTanks,
                         icon: Icons.water_outlined,
                         label: 'All Tanks',

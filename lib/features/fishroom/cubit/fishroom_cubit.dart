@@ -66,6 +66,23 @@ class FishroomCubit extends Cubit<FishroomState> {
     }
   }
 
+  Future<List<Map<String, dynamic>>> getTankReadings(String tankId) async {
+    try {
+      final response = await fishroomAdmin
+          .from('tank_readings')
+          .select('*')
+          .eq('tank_id', tankId)
+          .order('created_at', ascending: false)
+          .limit(10);
+
+      return (response as List)
+          .map((entry) => Map<String, dynamic>.from(entry as Map))
+          .toList();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> getBugReports() async {
     try {
       final response = await fishroomAdmin
